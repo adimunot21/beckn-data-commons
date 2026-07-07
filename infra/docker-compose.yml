@@ -1,0 +1,137 @@
+# Local orchestration for the Beckn Data Commons network.
+# Build context is the repo root (..); the single root Dockerfile is
+# parameterized per service via the SERVICE build arg.
+#
+# Run from the repo root:  docker compose -f infra/docker-compose.yml up --build
+name: beckn-data-commons
+
+x-service-healthcheck: &service-healthcheck
+  interval: 10s
+  timeout: 5s
+  retries: 5
+  start_period: 15s
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bdc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bdc_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-bdc}
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-bdc} -d ${POSTGRES_DB:-bdc}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  bap:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: bap
+    environment:
+      PORT: 3001
+    ports:
+      - '${BAP_PORT:-3001}:3001'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  bpp:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: bpp
+    environment:
+      PORT: 3002
+    ports:
+      - '${BPP_PORT:-3002}:3002'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  access-manager:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: access-manager
+    environment:
+      PORT: 3003
+    ports:
+      - '${ACCESS_MANAGER_PORT:-3003}:3003'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  mcp-server:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: mcp-server
+    environment:
+      PORT: 3004
+    ports:
+      - '${MCP_SERVER_PORT:-3004}:3004'
+    healthcheck:
+      <<: *service-healthcheck
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3004/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+volumes:
+  postgres-data:
