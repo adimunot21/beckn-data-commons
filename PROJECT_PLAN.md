@@ -9,17 +9,18 @@
 
 **"Done" looks like:**
 - [ ] At least 3 independent mock BPPs (data/model providers) and 1 BAP running, signing and verifying every message per Beckn spec (Ed25519).
-- [ ] A full `search → select → init → confirm → on_confirm` flow completes, ending in the Access Manager issuing a signed, scoped **Access Grant** (a consent artifact: purpose, scope, expiry, revocability) — not just a raw URL.
+- [ ] A full `discover → select → init → confirm → on_confirm` flow completes (Beckn v2.0.0 actions; see `docs/00_protocol.md`), ending in the Access Manager issuing a signed, scoped **Access Grant** (a consent artifact: purpose, scope, expiry, revocability) — not just a raw URL.
 - [ ] A real download only succeeds when a valid, unexpired, correctly-scoped grant is presented; an expired or revoked grant is provably rejected.
 - [ ] Open Claude (or any MCP client) → say "find me a small permissively-licensed tabular dataset for churn prediction, at least 2,000 rows" → agent searches, requests access, gets the grant, and actually retrieves the data — zero code written by the human in the loop.
-- [ ] A fine-tuned local model (trained on RunPod) parses natural-language data requests into valid Beckn `search` payloads, with a written comparison (accuracy / latency / cost) against GPT-4o-class function-calling on the same task.
+- [ ] A fine-tuned local model (trained on RunPod) parses natural-language data requests into valid Beckn `discover` payloads, with a written comparison (accuracy / latency / cost) against GPT-4o-class function-calling on the same task.
 - [ ] Everything deployed and reachable, with CI, tests, signed messages/grants, and a security write-up.
 
-**Novelty check (why this hasn't been done):**
-- Beckn's own leadership publicly floated a "Decentralised Data Marketplace" (DDM) concept in early 2026 — a coordination layer for discoverable, consent-governed data access for AI. As of now it is a stated thesis/pitch, with **no public open-source reference implementation** I could find.
-- DEPA (the consent-manager/consent-artifact pattern behind India's Account Aggregator framework) has only ever been implemented for regulated financial and health data flows — nobody has adapted the *architectural pattern* (separating the party holding data from the party managing consent) to an ML dataset/model marketplace.
+**Novelty check (why this hasn't been done):** *(revised after Phase 1 inspection — see `docs/00_protocol.md`)*
+- An official **Beckn DDM (Decentralised Data Marketplace)** spec now exists ([`beckn/DDM`](https://github.com/beckn/DDM)): published `DatasetItem` and `DatasetFulfillment` schemas, live in the `fidedocker/sandbox-2.0` simulator. **We align to it** for genuine interop rather than inventing a parallel schema. Crucially, DDM defines discovery + fulfillment but its access model is a bare `fulfillment:accessUrl` — a bearer URL with an embedded opaque token, a validity window, and a download counter. It is single-party, symmetric, **non-revocable, and unverifiable by any third party**, and the spec has no notion of consent, scope, purpose-binding, or revocation.
+- **Our contribution is precisely that gap:** a DEPA-style **Access Grant** — an Ed25519-signed, scoped, purpose-bound, expiring, *revocable* consent artifact issued by an Access Manager that is *separate* from the data-holding BPP — replacing DDM's bearer-URL trust model while staying wire-compatible with the `DatasetFulfillment` envelope.
+- DEPA (the consent-manager/consent-artifact pattern behind India's Account Aggregator framework) has only ever been implemented for regulated financial and health data flows — nobody has adapted the *architectural pattern* (separating the party holding data from the party managing consent) to an ML dataset/model marketplace, and specifically not on top of Beckn DDM.
 - The one public Beckn↔MCP bridge that exists is an admitted one-hour, unreviewed prototype for generic retail/mobility — no signing, no novel domain, no consent layer, no evaluation.
-- This project combines three things that individually exist but have never been put together: Beckn (transport/discovery), a DEPA-style consent artifact (governance), and MCP + a locally fine-tuned parser (agent access).
+- The differentiator is the combination — Beckn DDM (transport/discovery, interop) + a DEPA-style *enforceable, revocable* consent artifact (the governance layer DDM lacks) + MCP and a locally fine-tuned parser (agent access) — plus a correct, signed, tested implementation.
 
 **Important scope note:** we are borrowing DEPA's *architectural pattern* (data holder / consent manager / data consumer, consent artifacts) for a dataset/model marketplace — we are **not** implementing or claiming compliance with India's actual regulated Account Aggregator framework, which governs personal financial/health data under specific law. All datasets in this project are synthetic or self-generated to avoid any real-world licensing or personal-data question entirely.
 
@@ -27,7 +28,7 @@
 
 ## 2. Target Users / Use Case
 
-Primary use case: portfolio/research piece proving you can (a) implement a real interoperability protocol correctly and securely, (b) design a new domain + consent schema for it — the actual open problem Beckn's own DDM pitch hasn't solved yet — (c) bridge it to agents the right way (signed, tested, documented), and (d) run a legitimate applied-ML experiment on top.
+Primary use case: portfolio/research piece proving you can (a) implement a real interoperability protocol correctly and securely, (b) design an enforceable consent layer on top of the official Beckn DDM schema — the part DDM leaves open — (c) bridge it to agents the right way (signed, tested, documented), and (d) run a legitimate applied-ML experiment on top.
 
 Real-world angle if you ever wanted to extend it: ML teams currently discover datasets/models through scattered registries (HuggingFace Hub, Kaggle, data broker sites) with no standard machine-readable licensing/consent metadata and no way for an *agent* to safely negotiate access on a human's behalf. A Beckn-based data commons would let any front-end (chat, IDE plugin, agent) plug into the same open network of providers.
 
