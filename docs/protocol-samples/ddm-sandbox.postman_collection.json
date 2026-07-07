@@ -1,0 +1,90 @@
+{
+  "info": {
+    "name": "BDC — Beckn v2 DDM Sandbox (nfh.global/testnet-ddm)",
+    "description": "Drives the Beckn v2.0.0 discover->select->init->confirm flow against the local fidedocker/sandbox-2.0 container.\n\nIMPORTANT — async pattern: every POST returns a synchronous ACK ({message:{status:ACK}}), NOT the result. The real on_<action> payload is POSTed asynchronously to your callback endpoint (bapUri). Run a listener on {{bapUri}} to see it, or read the captured samples in docs/protocol-samples/ddm/.\n\nStart the sandbox first:\n  docker run -d --name sandbox-2.0 --add-host=host.docker.internal:host-gateway \\\n    -e BPP_CALLBACK_ENDPOINT=http://host.docker.internal:8082/bpp/caller -p 3000:3000 \\\n    fidedocker/sandbox-2.0:latest",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "sandbox", "value": "http://localhost:3000" },
+    { "key": "bapId", "value": "bap.local.test" },
+    { "key": "bapUri", "value": "http://host.docker.internal:8082" },
+    { "key": "networkId", "value": "nfh.global/testnet-ddm" },
+    { "key": "transactionId", "value": "550e8400-e29b-41d4-a716-446655440100" },
+    { "key": "messageId", "value": "550e8400-e29b-41d4-a716-446655440199" }
+  ],
+  "item": [
+    {
+      "name": "0. Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": { "raw": "{{sandbox}}/api/health", "host": ["{{sandbox}}"], "path": ["api", "health"] },
+        "description": "Returns {\"message\":\"OK!\"} when the sandbox is up."
+      }
+    },
+    {
+      "name": "1. discover",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Fresh ids per run. transactionId is stable across a journey; set it once and reuse for select/init/confirm.",
+              "pm.collectionVariables.set('messageId', crypto.randomUUID());"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "content-type", "value": "application/json" }],
+        "url": { "raw": "{{sandbox}}/api/webhook/discover", "host": ["{{sandbox}}"], "path": ["api", "webhook", "discover"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"context\": {\n    \"networkId\": \"{{networkId}}\",\n    \"action\": \"discover\",\n    \"version\": \"2.0.0\",\n    \"bapId\": \"{{bapId}}\",\n    \"bapUri\": \"{{bapUri}}\",\n    \"transactionId\": \"{{transactionId}}\",\n    \"messageId\": \"{{messageId}}\",\n    \"timestamp\": \"2026-07-07T10:00:00Z\",\n    \"ttl\": \"PT30S\"\n  },\n  \"message\": {\n    \"intent\": {\n      \"descriptor\": { \"name\": \"rainfall probability dataset\" }\n    }\n  }\n}"
+        },
+        "description": "Sync response = ACK. The on_discover catalog is POSTed to {{bapUri}}/bpp/caller/on_discover."
+      }
+    },
+    {
+      "name": "2. select",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "content-type", "value": "application/json" }],
+        "url": { "raw": "{{sandbox}}/api/webhook/select", "host": ["{{sandbox}}"], "path": ["api", "webhook", "select"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"context\": {\n    \"networkId\": \"{{networkId}}\",\n    \"action\": \"select\",\n    \"version\": \"2.0.0\",\n    \"bapId\": \"{{bapId}}\",\n    \"bapUri\": \"{{bapUri}}\",\n    \"transactionId\": \"{{transactionId}}\",\n    \"messageId\": \"{{messageId}}\",\n    \"timestamp\": \"2026-07-07T10:00:05Z\",\n    \"ttl\": \"PT30S\"\n  },\n  \"message\": {\n    \"contract\": {\n      \"offers\": [{ \"id\": \"offer-rainprob-delhi-2025-03-bulk-download\" }]\n    }\n  }\n}"
+        },
+        "description": "Sync ACK; on_select (contract, status DRAFT) delivered to the callback endpoint."
+      }
+    },
+    {
+      "name": "3. init",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "content-type", "value": "application/json" }],
+        "url": { "raw": "{{sandbox}}/api/webhook/init", "host": ["{{sandbox}}"], "path": ["api", "webhook", "init"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"context\": {\n    \"networkId\": \"{{networkId}}\",\n    \"action\": \"init\",\n    \"version\": \"2.0.0\",\n    \"bapId\": \"{{bapId}}\",\n    \"bapUri\": \"{{bapUri}}\",\n    \"transactionId\": \"{{transactionId}}\",\n    \"messageId\": \"{{messageId}}\",\n    \"timestamp\": \"2026-07-07T10:00:10Z\",\n    \"ttl\": \"PT30S\"\n  },\n  \"message\": {\n    \"contract\": {\n      \"offers\": [{ \"id\": \"offer-rainprob-delhi-2025-03-bulk-download\" }]\n    }\n  }\n}"
+        },
+        "description": "Sync ACK; on_init (contract, status ACTIVE) delivered to the callback endpoint."
+      }
+    },
+    {
+      "name": "4. confirm",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "content-type", "value": "application/json" }],
+        "url": { "raw": "{{sandbox}}/api/webhook/confirm", "host": ["{{sandbox}}"], "path": ["api", "webhook", "confirm"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"context\": {\n    \"networkId\": \"{{networkId}}\",\n    \"action\": \"confirm\",\n    \"version\": \"2.0.0\",\n    \"bapId\": \"{{bapId}}\",\n    \"bapUri\": \"{{bapUri}}\",\n    \"transactionId\": \"{{transactionId}}\",\n    \"messageId\": \"{{messageId}}\",\n    \"timestamp\": \"2026-07-07T10:00:15Z\",\n    \"ttl\": \"PT30S\"\n  },\n  \"message\": {\n    \"contract\": {\n      \"offers\": [{ \"id\": \"offer-rainprob-delhi-2025-03-bulk-download\" }]\n    }\n  }\n}"
+        },
+        "description": "Sync ACK; on_confirm (contract ACTIVE + performance/DatasetFulfillment with accessUrl) delivered to the callback endpoint. This is where our Access Grant will replace the bare accessUrl."
+      }
+    }
+  ]
+}
