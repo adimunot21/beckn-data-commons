@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { canonicalJson } from './index.js';
+import { canonicalJson } from './canonical.js';
 
 describe('canonicalJson', () => {
   it('sorts object keys lexicographically', () => {

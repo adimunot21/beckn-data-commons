@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LicenseClass, ResourceKind } from './index.js';
+import { LicenseClass, ResourceKind } from './domain.js';
 
 describe('BDC domain vocabulary', () => {
   it('accepts valid resource kinds', () => {

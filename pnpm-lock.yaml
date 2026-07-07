@@ -35,6 +35,9 @@ importers:
 
   packages/beckn-schemas:
     dependencies:
+      '@bdc/crypto-utils':
+        specifier: workspace:*
+        version: link:../crypto-utils
       zod:
         specifier: 3.24.1
         version: 3.24.1

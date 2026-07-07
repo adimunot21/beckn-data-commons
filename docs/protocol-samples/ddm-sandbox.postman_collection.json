@@ -18,7 +18,11 @@
       "request": {
         "method": "GET",
         "header": [],
-        "url": { "raw": "{{sandbox}}/api/health", "host": ["{{sandbox}}"], "path": ["api", "health"] },
+        "url": {
+          "raw": "{{sandbox}}/api/health",
+          "host": ["{{sandbox}}"],
+          "path": ["api", "health"]
+        },
         "description": "Returns {\"message\":\"OK!\"} when the sandbox is up."
       }
     },
@@ -39,7 +43,11 @@
       "request": {
         "method": "POST",
         "header": [{ "key": "content-type", "value": "application/json" }],
-        "url": { "raw": "{{sandbox}}/api/webhook/discover", "host": ["{{sandbox}}"], "path": ["api", "webhook", "discover"] },
+        "url": {
+          "raw": "{{sandbox}}/api/webhook/discover",
+          "host": ["{{sandbox}}"],
+          "path": ["api", "webhook", "discover"]
+        },
         "body": {
           "mode": "raw",
           "raw": "{\n  \"context\": {\n    \"networkId\": \"{{networkId}}\",\n    \"action\": \"discover\",\n    \"version\": \"2.0.0\",\n    \"bapId\": \"{{bapId}}\",\n    \"bapUri\": \"{{bapUri}}\",\n    \"transactionId\": \"{{transactionId}}\",\n    \"messageId\": \"{{messageId}}\",\n    \"timestamp\": \"2026-07-07T10:00:00Z\",\n    \"ttl\": \"PT30S\"\n  },\n  \"message\": {\n    \"intent\": {\n      \"descriptor\": { \"name\": \"rainfall probability dataset\" }\n    }\n  }\n}"
@@ -52,7 +60,11 @@
       "request": {
         "method": "POST",
         "header": [{ "key": "content-type", "value": "application/json" }],
-        "url": { "raw": "{{sandbox}}/api/webhook/select", "host": ["{{sandbox}}"], "path": ["api", "webhook", "select"] },
+        "url": {
+          "raw": "{{sandbox}}/api/webhook/select",
+          "host": ["{{sandbox}}"],
+          "path": ["api", "webhook", "select"]
+        },
         "body": {
           "mode": "raw",
           "raw": "{\n  \"context\": {\n    \"networkId\": \"{{networkId}}\",\n    \"action\": \"select\",\n    \"version\": \"2.0.0\",\n    \"bapId\": \"{{bapId}}\",\n    \"bapUri\": \"{{bapUri}}\",\n    \"transactionId\": \"{{transactionId}}\",\n    \"messageId\": \"{{messageId}}\",\n    \"timestamp\": \"2026-07-07T10:00:05Z\",\n    \"ttl\": \"PT30S\"\n  },\n  \"message\": {\n    \"contract\": {\n      \"offers\": [{ \"id\": \"offer-rainprob-delhi-2025-03-bulk-download\" }]\n    }\n  }\n}"
@@ -65,7 +77,11 @@
       "request": {
         "method": "POST",
         "header": [{ "key": "content-type", "value": "application/json" }],
-        "url": { "raw": "{{sandbox}}/api/webhook/init", "host": ["{{sandbox}}"], "path": ["api", "webhook", "init"] },
+        "url": {
+          "raw": "{{sandbox}}/api/webhook/init",
+          "host": ["{{sandbox}}"],
+          "path": ["api", "webhook", "init"]
+        },
         "body": {
           "mode": "raw",
           "raw": "{\n  \"context\": {\n    \"networkId\": \"{{networkId}}\",\n    \"action\": \"init\",\n    \"version\": \"2.0.0\",\n    \"bapId\": \"{{bapId}}\",\n    \"bapUri\": \"{{bapUri}}\",\n    \"transactionId\": \"{{transactionId}}\",\n    \"messageId\": \"{{messageId}}\",\n    \"timestamp\": \"2026-07-07T10:00:10Z\",\n    \"ttl\": \"PT30S\"\n  },\n  \"message\": {\n    \"contract\": {\n      \"offers\": [{ \"id\": \"offer-rainprob-delhi-2025-03-bulk-download\" }]\n    }\n  }\n}"
@@ -78,7 +94,11 @@
       "request": {
         "method": "POST",
         "header": [{ "key": "content-type", "value": "application/json" }],
-        "url": { "raw": "{{sandbox}}/api/webhook/confirm", "host": ["{{sandbox}}"], "path": ["api", "webhook", "confirm"] },
+        "url": {
+          "raw": "{{sandbox}}/api/webhook/confirm",
+          "host": ["{{sandbox}}"],
+          "path": ["api", "webhook", "confirm"]
+        },
         "body": {
           "mode": "raw",
           "raw": "{\n  \"context\": {\n    \"networkId\": \"{{networkId}}\",\n    \"action\": \"confirm\",\n    \"version\": \"2.0.0\",\n    \"bapId\": \"{{bapId}}\",\n    \"bapUri\": \"{{bapUri}}\",\n    \"transactionId\": \"{{transactionId}}\",\n    \"messageId\": \"{{messageId}}\",\n    \"timestamp\": \"2026-07-07T10:00:15Z\",\n    \"ttl\": \"PT30S\"\n  },\n  \"message\": {\n    \"contract\": {\n      \"offers\": [{ \"id\": \"offer-rainprob-delhi-2025-03-bulk-download\" }]\n    }\n  }\n}"
