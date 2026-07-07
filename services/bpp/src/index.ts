@@ -1,32 +1,57 @@
 /**
- * BPP — Beckn Provider Platform (config-driven dataset/model provider).
+ * BPP entrypoint — a config-driven Beckn provider platform. One codebase, run
+ * as many instances as there are catalogs (see infra/docker-compose.yml).
  *
- * Phase 0 stub: boots a Fastify server exposing GET /health. In Phase 3 this
- * becomes the generic, config-driven provider (run 3x with different synthetic
- * catalogs) implementing on_search/on_select/on_init/on_confirm, the
- * grant-issuance hook, and the grant-validating download endpoint.
+ * Selects Postgres-backed stores when DATABASE_URL is set, else in-memory.
  */
-import Fastify from 'fastify';
+import pg from 'pg';
+import { loadConfig } from './config.js';
+import { BppCatalog } from './catalog.js';
+import { createApp } from './app.js';
+import { InMemoryRedemptionStore, InMemoryRevocationStore } from './stores/memory.js';
+import { PostgresRedemptionStore, PostgresRevocationStore, initSchema } from './stores/postgres.js';
+import type { RedemptionStore, RevocationStore } from './stores/types.js';
 
-const SERVICE_NAME = 'bpp';
-const PORT = Number(process.env.PORT ?? 3002);
-const HOST = process.env.HOST ?? '0.0.0.0';
+const { Pool } = pg;
 
-const app = Fastify({ logger: true });
+async function main(): Promise<void> {
+  const config = loadConfig();
+  const catalog = BppCatalog.load(config.catalogFile, config.dataDir);
 
-app.get('/health', async () => ({
-  status: 'ok',
-  service: SERVICE_NAME,
-  timestamp: new Date().toISOString(),
-}));
+  let revocations: RevocationStore;
+  let redemptions: RedemptionStore;
+  if (config.databaseUrl) {
+    const pool = new Pool({ connectionString: config.databaseUrl });
+    await initSchema(pool);
+    revocations = new PostgresRevocationStore(pool);
+    redemptions = new PostgresRedemptionStore(pool);
+  } else {
+    revocations = new InMemoryRevocationStore();
+    redemptions = new InMemoryRedemptionStore();
+  }
 
-async function start(): Promise<void> {
+  const app = createApp({ config, catalog, revocations, redemptions });
+
+  if (!config.accessManagerPublicKey) {
+    app.log.warn(
+      'ACCESS_MANAGER_PUBLIC_KEY is not set — the download endpoint will refuse to serve until it is (Phase 4 wiring).',
+    );
+  }
+
   try {
-    await app.listen({ port: PORT, host: HOST });
+    await app.listen({ port: config.port, host: config.host });
+    app.log.info(
+      {
+        bppId: config.bppId,
+        catalog: config.catalogFile,
+        store: config.databaseUrl ? 'postgres' : 'memory',
+      },
+      'BPP up',
+    );
   } catch (err) {
     app.log.error(err);
     process.exit(1);
   }
 }
 
-void start();
+void main();

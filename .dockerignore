@@ -3,6 +3,5 @@
 .git
 .github
 docs
-seed-data
 *.log
 .env

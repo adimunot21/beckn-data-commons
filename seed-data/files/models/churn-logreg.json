@@ -1,0 +1,17 @@
+{
+  "format": "bdc-model/1",
+  "architecture": "logistic-regression",
+  "task": "binary-classification",
+  "features": [
+    "age",
+    "tenure_months",
+    "monthly_charges"
+  ],
+  "weights": [
+    -0.2935,
+    0.7943,
+    -0.7069
+  ],
+  "bias": -0.6962,
+  "trainedOn": "synthetic-churn"
+}

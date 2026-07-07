@@ -1,0 +1,88 @@
+{
+  "catalog": {
+    "id": "catalog-pixelforge",
+    "descriptor": {
+      "name": "PixelForge — Image Datasets"
+    },
+    "bppId": "bpp.vision.local",
+    "bppUri": "http://localhost:3012",
+    "provider": {
+      "id": "pixelforge",
+      "descriptor": {
+        "name": "PixelForge"
+      }
+    },
+    "isActive": true,
+    "resources": [
+      {
+        "id": "ds-shapes",
+        "descriptor": {
+          "name": "Tiny Shapes",
+          "shortDesc": "8x8 grayscale shapes"
+        }
+      }
+    ],
+    "offers": [
+      {
+        "id": "offer-shapes-full",
+        "descriptor": {
+          "name": "Tiny Shapes — Full (NDJSON)"
+        },
+        "resourceIds": [
+          "ds-shapes"
+        ],
+        "offerAttributes": {
+          "@context": "https://raw.githubusercontent.com/beckn/DDM/main/specification/schema/DatasetItem/v1/context.jsonld",
+          "@type": "DatasetItem",
+          "schema:identifier": "ds-shapes",
+          "schema:name": "Tiny Shapes",
+          "schema:description": "Synthetic 8x8 grayscale shape images (circle/square/triangle).",
+          "schema:temporalCoverage": "2025-01-01/2025-12-31",
+          "schema:license": "https://creativecommons.org/licenses/by/4.0/",
+          "schema:conditionsOfAccess": "Attribution required; no resale of raw data.",
+          "dataset:accessMethod": "DOWNLOAD",
+          "dataset:rowCountEstimate": 2000,
+          "dataset:columnCount": 64,
+          "dataset:dataType": "ImageNdjson",
+          "dataset:refreshType": "STATIC",
+          "dataset:sensitivityLevel": "PUBLIC",
+          "bdc:resourceKind": "dataset",
+          "bdc:modality": "image",
+          "bdc:taskType": "classification",
+          "bdc:licenseClass": "permissive"
+        },
+        "validity": {
+          "startDate": "2025-01-01T00:00:00Z",
+          "endDate": "2026-12-31T23:59:59Z"
+        },
+        "considerations": [
+          {
+            "id": "consideration-shapes",
+            "status": {
+              "code": "ACTIVE"
+            },
+            "considerationAttributes": {
+              "@type": "PriceSpecification",
+              "currency": "INR",
+              "value": 0,
+              "components": [
+                {
+                  "type": "UNIT",
+                  "value": 0,
+                  "currency": "INR",
+                  "description": "One-time access"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "files": {
+    "offer-shapes-full": {
+      "full": "image/shapes.ndjson",
+      "sample": "image/shapes.sample.ndjson"
+    }
+  }
+}

@@ -63,7 +63,10 @@ services:
           "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
         ]
 
-  bpp:
+  # Three config-driven BPP instances from one image, each serving a different
+  # synthetic catalog. ACCESS_MANAGER_PUBLIC_KEY is wired in Phase 4.
+  bpp-tabular:
+    image: bdc-bpp:local
     build:
       context: ..
       dockerfile: Dockerfile
@@ -71,8 +74,14 @@ services:
         SERVICE: bpp
     environment:
       PORT: 3002
+      BPP_ID: bpp.tabular.local
+      BPP_URI: http://localhost:3002
+      CATALOG_FILE: /app/seed-data/catalogs/tabular.catalog.json
+      DATA_DIR: /app/seed-data/files
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bdc}:${POSTGRES_PASSWORD:-bdc_dev_password}@postgres:5432/${POSTGRES_DB:-bdc}
+      ACCESS_MANAGER_PUBLIC_KEY: ${ACCESS_MANAGER_PUBLIC_KEY:-}
     ports:
-      - '${BPP_PORT:-3002}:3002'
+      - '${BPP_TABULAR_PORT:-3002}:3002'
     depends_on:
       postgres:
         condition: service_healthy
@@ -86,6 +95,70 @@ services:
           'node',
           '-e',
           "fetch('http://127.0.0.1:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  bpp-image:
+    image: bdc-bpp:local
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: bpp
+    environment:
+      PORT: 3012
+      BPP_ID: bpp.vision.local
+      BPP_URI: http://localhost:3012
+      CATALOG_FILE: /app/seed-data/catalogs/image.catalog.json
+      DATA_DIR: /app/seed-data/files
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bdc}:${POSTGRES_PASSWORD:-bdc_dev_password}@postgres:5432/${POSTGRES_DB:-bdc}
+      ACCESS_MANAGER_PUBLIC_KEY: ${ACCESS_MANAGER_PUBLIC_KEY:-}
+    ports:
+      - '${BPP_IMAGE_PORT:-3012}:3012'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3012/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+
+  bpp-models:
+    image: bdc-bpp:local
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: bpp
+    environment:
+      PORT: 3022
+      BPP_ID: bpp.models.local
+      BPP_URI: http://localhost:3022
+      CATALOG_FILE: /app/seed-data/catalogs/models.catalog.json
+      DATA_DIR: /app/seed-data/files
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bdc}:${POSTGRES_PASSWORD:-bdc_dev_password}@postgres:5432/${POSTGRES_DB:-bdc}
+      ACCESS_MANAGER_PUBLIC_KEY: ${ACCESS_MANAGER_PUBLIC_KEY:-}
+    ports:
+      - '${BPP_MODELS_PORT:-3022}:3022'
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3022/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
         ]
 
   access-manager:

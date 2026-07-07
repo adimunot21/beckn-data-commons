@@ -1,0 +1,152 @@
+{
+  "catalog": {
+    "id": "catalog-synthtab",
+    "descriptor": {
+      "name": "SynthTab Labs — Tabular Datasets"
+    },
+    "bppId": "bpp.tabular.local",
+    "bppUri": "http://localhost:3002",
+    "provider": {
+      "id": "synthtab",
+      "descriptor": {
+        "name": "SynthTab Labs"
+      }
+    },
+    "isActive": true,
+    "resources": [
+      {
+        "id": "ds-churn",
+        "descriptor": {
+          "name": "Customer Churn",
+          "shortDesc": "Synthetic telco churn dataset"
+        }
+      },
+      {
+        "id": "ds-housing",
+        "descriptor": {
+          "name": "Housing Prices",
+          "shortDesc": "Synthetic housing regression dataset"
+        }
+      }
+    ],
+    "offers": [
+      {
+        "id": "offer-churn-full",
+        "descriptor": {
+          "name": "Customer Churn — Full (CSV)"
+        },
+        "resourceIds": [
+          "ds-churn"
+        ],
+        "offerAttributes": {
+          "@context": "https://raw.githubusercontent.com/beckn/DDM/main/specification/schema/DatasetItem/v1/context.jsonld",
+          "@type": "DatasetItem",
+          "schema:identifier": "ds-churn",
+          "schema:name": "Customer Churn",
+          "schema:description": "Synthetic telco churn dataset for binary classification.",
+          "schema:temporalCoverage": "2025-01-01/2025-12-31",
+          "schema:license": "https://creativecommons.org/licenses/by/4.0/",
+          "schema:conditionsOfAccess": "Attribution required; no resale of raw data.",
+          "dataset:accessMethod": "DOWNLOAD",
+          "dataset:rowCountEstimate": 3000,
+          "dataset:columnCount": 6,
+          "dataset:dataType": "TabularCsv",
+          "dataset:refreshType": "STATIC",
+          "dataset:sensitivityLevel": "PUBLIC",
+          "bdc:resourceKind": "dataset",
+          "bdc:modality": "tabular",
+          "bdc:taskType": "classification",
+          "bdc:licenseClass": "permissive"
+        },
+        "validity": {
+          "startDate": "2025-01-01T00:00:00Z",
+          "endDate": "2026-12-31T23:59:59Z"
+        },
+        "considerations": [
+          {
+            "id": "consideration-churn",
+            "status": {
+              "code": "ACTIVE"
+            },
+            "considerationAttributes": {
+              "@type": "PriceSpecification",
+              "currency": "INR",
+              "value": 0,
+              "components": [
+                {
+                  "type": "UNIT",
+                  "value": 0,
+                  "currency": "INR",
+                  "description": "One-time access"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "offer-housing-full",
+        "descriptor": {
+          "name": "Housing Prices — Full (CSV)"
+        },
+        "resourceIds": [
+          "ds-housing"
+        ],
+        "offerAttributes": {
+          "@context": "https://raw.githubusercontent.com/beckn/DDM/main/specification/schema/DatasetItem/v1/context.jsonld",
+          "@type": "DatasetItem",
+          "schema:identifier": "ds-housing",
+          "schema:name": "Housing Prices",
+          "schema:description": "Synthetic housing price dataset for regression.",
+          "schema:temporalCoverage": "2025-01-01/2025-12-31",
+          "schema:license": "https://creativecommons.org/licenses/by/4.0/",
+          "schema:conditionsOfAccess": "Attribution required; no resale of raw data.",
+          "dataset:accessMethod": "DOWNLOAD",
+          "dataset:rowCountEstimate": 2500,
+          "dataset:columnCount": 6,
+          "dataset:dataType": "TabularCsv",
+          "dataset:refreshType": "STATIC",
+          "dataset:sensitivityLevel": "PUBLIC",
+          "bdc:resourceKind": "dataset",
+          "bdc:modality": "tabular",
+          "bdc:taskType": "regression",
+          "bdc:licenseClass": "permissive"
+        },
+        "validity": {
+          "startDate": "2025-01-01T00:00:00Z",
+          "endDate": "2026-12-31T23:59:59Z"
+        },
+        "considerations": [
+          {
+            "id": "consideration-housing",
+            "status": {
+              "code": "ACTIVE"
+            },
+            "considerationAttributes": {
+              "@type": "PriceSpecification",
+              "currency": "INR",
+              "value": 0,
+              "components": [
+                {
+                  "type": "UNIT",
+                  "value": 0,
+                  "currency": "INR",
+                  "description": "One-time access"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "files": {
+    "offer-churn-full": {
+      "full": "tabular/churn.csv",
+      "sample": "tabular/churn.sample.csv"
+    },
+    "offer-housing-full": {
+      "full": "tabular/housing.csv"
+    }
+  }
+}

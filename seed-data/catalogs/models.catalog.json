@@ -1,0 +1,151 @@
+{
+  "catalog": {
+    "id": "catalog-tinymodels",
+    "descriptor": {
+      "name": "TinyModels Co — Pretrained Models"
+    },
+    "bppId": "bpp.models.local",
+    "bppUri": "http://localhost:3022",
+    "provider": {
+      "id": "tinymodels",
+      "descriptor": {
+        "name": "TinyModels Co"
+      }
+    },
+    "isActive": true,
+    "resources": [
+      {
+        "id": "model-churn-logreg",
+        "descriptor": {
+          "name": "Churn LogReg",
+          "shortDesc": "Logistic regression churn model"
+        }
+      },
+      {
+        "id": "model-shapes-mlp",
+        "descriptor": {
+          "name": "Shapes MLP",
+          "shortDesc": "2-layer MLP shape classifier"
+        }
+      }
+    ],
+    "offers": [
+      {
+        "id": "offer-churn-logreg",
+        "descriptor": {
+          "name": "Churn LogReg — Weights (JSON)"
+        },
+        "resourceIds": [
+          "model-churn-logreg"
+        ],
+        "offerAttributes": {
+          "@context": "https://raw.githubusercontent.com/beckn/DDM/main/specification/schema/DatasetItem/v1/context.jsonld",
+          "@type": "DatasetItem",
+          "schema:identifier": "model-churn-logreg",
+          "schema:name": "Churn LogReg",
+          "schema:description": "Pretrained logistic-regression churn classifier weights.",
+          "schema:temporalCoverage": "2025-01-01/2025-12-31",
+          "schema:license": "https://creativecommons.org/licenses/by/4.0/",
+          "schema:conditionsOfAccess": "Attribution required; no resale of raw data.",
+          "dataset:accessMethod": "DOWNLOAD",
+          "dataset:rowCountEstimate": 0,
+          "dataset:columnCount": 3,
+          "dataset:dataType": "PretrainedModel",
+          "dataset:refreshType": "STATIC",
+          "dataset:sensitivityLevel": "PUBLIC",
+          "bdc:resourceKind": "model",
+          "bdc:modality": "tabular",
+          "bdc:taskType": "classification",
+          "bdc:licenseClass": "permissive"
+        },
+        "validity": {
+          "startDate": "2025-01-01T00:00:00Z",
+          "endDate": "2026-12-31T23:59:59Z"
+        },
+        "considerations": [
+          {
+            "id": "consideration-logreg",
+            "status": {
+              "code": "ACTIVE"
+            },
+            "considerationAttributes": {
+              "@type": "PriceSpecification",
+              "currency": "INR",
+              "value": 0,
+              "components": [
+                {
+                  "type": "UNIT",
+                  "value": 0,
+                  "currency": "INR",
+                  "description": "One-time access"
+                }
+              ]
+            }
+          }
+        ]
+      },
+      {
+        "id": "offer-shapes-mlp",
+        "descriptor": {
+          "name": "Shapes MLP — Weights (JSON)"
+        },
+        "resourceIds": [
+          "model-shapes-mlp"
+        ],
+        "offerAttributes": {
+          "@context": "https://raw.githubusercontent.com/beckn/DDM/main/specification/schema/DatasetItem/v1/context.jsonld",
+          "@type": "DatasetItem",
+          "schema:identifier": "model-shapes-mlp",
+          "schema:name": "Shapes MLP",
+          "schema:description": "Pretrained 2-layer MLP shape classifier weights.",
+          "schema:temporalCoverage": "2025-01-01/2025-12-31",
+          "schema:license": "https://creativecommons.org/licenses/by/4.0/",
+          "schema:conditionsOfAccess": "Attribution required; no resale of raw data.",
+          "dataset:accessMethod": "DOWNLOAD",
+          "dataset:rowCountEstimate": 0,
+          "dataset:columnCount": 0,
+          "dataset:dataType": "PretrainedModel",
+          "dataset:refreshType": "STATIC",
+          "dataset:sensitivityLevel": "PUBLIC",
+          "bdc:resourceKind": "model",
+          "bdc:modality": "image",
+          "bdc:taskType": "classification",
+          "bdc:licenseClass": "research-only"
+        },
+        "validity": {
+          "startDate": "2025-01-01T00:00:00Z",
+          "endDate": "2026-12-31T23:59:59Z"
+        },
+        "considerations": [
+          {
+            "id": "consideration-mlp",
+            "status": {
+              "code": "ACTIVE"
+            },
+            "considerationAttributes": {
+              "@type": "PriceSpecification",
+              "currency": "INR",
+              "value": 0,
+              "components": [
+                {
+                  "type": "UNIT",
+                  "value": 0,
+                  "currency": "INR",
+                  "description": "One-time access"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "files": {
+    "offer-churn-logreg": {
+      "full": "models/churn-logreg.json"
+    },
+    "offer-shapes-mlp": {
+      "full": "models/shapes-mlp.json"
+    }
+  }
+}
