@@ -85,7 +85,11 @@ seed-data/                                       synthetic catalogs (Phase 3)
 
 ## Documentation
 
-Start with the **architecture overview**, then the per-component walkthroughs.
+**New to all of this?** Start with the **[course](./course/README.md)** — a from-scratch,
+no-prerequisites curriculum that explains protocols, DPI, Beckn, consent/DEPA, cryptography, and MCP for
+someone who's never seen any of it, ending in a hands-on "run it yourself" capstone.
+
+For a technical reader, start with the **architecture overview**, then the per-component walkthroughs.
 
 | Doc | What it covers |
 | --- | --- |
