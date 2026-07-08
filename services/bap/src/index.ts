@@ -1,31 +1,33 @@
 /**
- * BAP — Beckn Application Platform (consumer gateway / orchestrator).
- *
- * Phase 0 stub: boots a Fastify server exposing GET /health so the service
- * health-checks green under Docker Compose. Search fan-out, on_search
- * aggregation, and select/init/confirm orchestration arrive in Phase 4.
+ * BAP entrypoint — consumer gateway / orchestrator. Fans discover out to the
+ * configured BPPs, aggregates on_* callbacks, and calls the Access Manager at
+ * confirm. No database: the BAP holds only short-lived in-flight aggregation state.
  */
-import Fastify from 'fastify';
+import { loadConfig } from './config.js';
+import { createApp } from './app.js';
+import { BapOrchestrator } from './orchestrator.js';
+import { httpAmClient, httpBppTransport } from './transport.js';
 
-const SERVICE_NAME = 'bap';
-const PORT = Number(process.env.PORT ?? 3001);
-const HOST = process.env.HOST ?? '0.0.0.0';
+async function main(): Promise<void> {
+  const config = loadConfig();
+  const orchestrator = new BapOrchestrator({
+    config,
+    transport: httpBppTransport,
+    amClient: httpAmClient(config.accessManagerUrl),
+  });
 
-const app = Fastify({ logger: true });
+  const app = createApp({ config, orchestrator });
 
-app.get('/health', async () => ({
-  status: 'ok',
-  service: SERVICE_NAME,
-  timestamp: new Date().toISOString(),
-}));
-
-async function start(): Promise<void> {
   try {
-    await app.listen({ port: PORT, host: HOST });
+    await app.listen({ port: config.port, host: config.host });
+    app.log.info(
+      { bapId: config.bapId, bpps: config.bpps.map((b) => b.bppId), am: config.accessManagerUrl },
+      'BAP up',
+    );
   } catch (err) {
     app.log.error(err);
     process.exit(1);
   }
 }
 
-void start();
+void main();

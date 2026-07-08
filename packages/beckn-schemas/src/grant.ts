@@ -88,6 +88,26 @@ export const SignedAccessGrant = z
   .strict();
 export type SignedAccessGrant = z.infer<typeof SignedAccessGrant>;
 
+/**
+ * Request the Access Manager to issue a grant (BAP -> AM, server-to-server). The
+ * AM fills in issuer, timestamps, grantId and nonce; the caller supplies who/what/
+ * why. Shared here so BAP and AM never disagree on the shape.
+ */
+export const IssueGrantRequest = z
+  .object({
+    grantee: z.object({ id: z.string().min(1), publicKey: z.string().optional() }).strict(),
+    provider: z.object({ bppId: z.string().min(1), bppUri: z.string().url() }).strict(),
+    resource: z.object({ resourceId: z.string().min(1), offerId: z.string().min(1) }).strict(),
+    scope: GrantScope,
+    licenseClass: LicenseClass,
+    purpose: z.string().min(1),
+    transactionId: z.string().uuid(),
+    /** Override the AM's default grant lifetime. */
+    ttlSeconds: z.number().int().positive().optional(),
+  })
+  .strict();
+export type IssueGrantRequest = z.infer<typeof IssueGrantRequest>;
+
 /** The exact bytes that get signed — exported so issuer and verifier never drift. */
 export function grantSigningPayload(claims: AccessGrantClaims): string {
   return canonicalJson(claims as unknown as JsonValue);

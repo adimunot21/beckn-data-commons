@@ -46,12 +46,24 @@ services:
         SERVICE: bap
     environment:
       PORT: 3001
+      BAP_ID: bap.bdc.local
+      # BPPs call back here; must be reachable from the BPP containers.
+      BAP_URI: http://bap:3001
+      NETWORK_ID: nfh.global/testnet-ddm
+      # Internal service DNS names for fan-out.
+      BPP_ENDPOINTS: bpp.tabular.local=http://bpp-tabular:3002,bpp.vision.local=http://bpp-image:3012,bpp.models.local=http://bpp-models:3022
+      ACCESS_MANAGER_URL: http://access-manager:3003
+      AGGREGATION_WINDOW_MS: 3000
     ports:
       - '${BAP_PORT:-3001}:3001'
     depends_on:
-      postgres:
+      bpp-tabular:
         condition: service_healthy
-      redis:
+      bpp-image:
+        condition: service_healthy
+      bpp-models:
+        condition: service_healthy
+      access-manager:
         condition: service_healthy
     healthcheck:
       <<: *service-healthcheck
@@ -169,6 +181,10 @@ services:
         SERVICE: access-manager
     environment:
       PORT: 3003
+      AM_ID: access-manager.bdc.local
+      AM_PRIVATE_KEY: ${AM_PRIVATE_KEY:-}
+      GRANT_TTL_SECONDS: 3600
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bdc}:${POSTGRES_PASSWORD:-bdc_dev_password}@postgres:5432/${POSTGRES_DB:-bdc}
     ports:
       - '${ACCESS_MANAGER_PORT:-3003}:3003'
     depends_on:

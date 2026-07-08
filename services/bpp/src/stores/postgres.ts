@@ -10,7 +10,7 @@ import type { Pool } from 'pg';
 import type { RedemptionStore, RevocationStore } from './types.js';
 
 const SCHEMA_SQL = `
-CREATE TABLE IF NOT EXISTS bpp_grant_revocations (
+CREATE TABLE IF NOT EXISTS grant_revocations (
   grant_id   TEXT PRIMARY KEY,
   revoked_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   reason     TEXT
@@ -47,16 +47,15 @@ export class PostgresRevocationStore implements RevocationStore {
   constructor(private readonly pool: Pool) {}
 
   async isRevoked(grantId: string): Promise<boolean> {
-    const { rows } = await this.pool.query(
-      'SELECT 1 FROM bpp_grant_revocations WHERE grant_id = $1',
-      [grantId],
-    );
+    const { rows } = await this.pool.query('SELECT 1 FROM grant_revocations WHERE grant_id = $1', [
+      grantId,
+    ]);
     return rows.length > 0;
   }
 
   async revoke(grantId: string, reason = 'unspecified'): Promise<void> {
     await this.pool.query(
-      `INSERT INTO bpp_grant_revocations (grant_id, reason) VALUES ($1, $2)
+      `INSERT INTO grant_revocations (grant_id, reason) VALUES ($1, $2)
        ON CONFLICT (grant_id) DO NOTHING`,
       [grantId, reason],
     );
