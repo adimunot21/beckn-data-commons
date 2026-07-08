@@ -12,9 +12,15 @@ and the whole network is transactable by any LLM agent through an MCP server.
 
 ## Status
 
-**Phase 0 — Environment & scaffold.** A pnpm/TypeScript monorepo with four health-checking
-services (BAP, BPP, Access Manager, MCP server) plus Postgres and Redis, orchestrated by Docker
-Compose. Product logic lands from Phase 2 onward.
+**MVP complete and hardened (Phases 0–5, 7).** A full Beckn network — a BAP orchestrating
+async search/select/init/confirm across three config-driven BPPs, an Access Manager issuing
+signed, scoped, revocable Access Grants, and an MCP server that lets Claude drive the whole flow
+in natural language: *search → obtain a grant → download real data → revoke → download refused.*
+Every Beckn hop is Ed25519-signed and replay-protected; every download is grant-gated (offline
+signature/scope/expiry + online revocation). 117 tests. Remaining: NLU fine-tune (Phase 6,
+stretch), cloud deploy (Phase 8).
+
+See [`docs/01_architecture.md`](./docs/01_architecture.md) for the guided tour.
 
 ## Architecture (services)
 
@@ -76,3 +82,18 @@ infra/docker-compose.yml                        local orchestration
 docs/                                           design + walkthrough docs
 seed-data/                                       synthetic catalogs (Phase 3)
 ```
+
+## Documentation
+
+Start with the **architecture overview**, then the per-component walkthroughs.
+
+| Doc | What it covers |
+| --- | --- |
+| [`docs/01_architecture.md`](./docs/01_architecture.md) | **Start here** — what BDC is, the end-to-end lifecycle, the two crypto layers, code map |
+| [`docs/02_bap.md`](./docs/02_bap.md) | BAP — async orchestration, aggregation window, confirm→grant |
+| [`docs/03_bpp.md`](./docs/03_bpp.md) | BPP — config-driven provider, the grant-gated download (`redeemGrant`) |
+| [`docs/04_access_manager.md`](./docs/04_access_manager.md) | Access Manager — issuing, revoking, the shared revocation table |
+| [`docs/05_mcp.md`](./docs/05_mcp.md) | MCP server — how an LLM agent drives the whole flow |
+| [`docs/mcp-setup.md`](./docs/mcp-setup.md) | Running the MCP demo from Claude |
+| [`docs/security.md`](./docs/security.md) | Per-hop message auth, grant verification, full threat model |
+| [`docs/00_protocol.md`](./docs/00_protocol.md) · [`consent-artifact-spec.md`](./docs/consent-artifact-spec.md) · [`domain-schema.md`](./docs/domain-schema.md) · [`data-contract.md`](./docs/data-contract.md) | Protocol notes, consent-artifact spec, domain schema, external data contract |
