@@ -32,11 +32,14 @@ jobs:
       - name: Format check
         run: pnpm format:check
 
-      - name: Typecheck
-        run: pnpm typecheck
-
+      # Build first: workspace packages expose their types via dist/, so
+      # typechecking a package that imports another (e.g. beckn-schemas ->
+      # crypto-utils) needs the dependency built. pnpm builds in topological order.
       - name: Build
         run: pnpm build
+
+      - name: Typecheck
+        run: pnpm typecheck
 
       - name: Test
         run: pnpm test

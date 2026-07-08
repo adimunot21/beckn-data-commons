@@ -98,7 +98,13 @@ services:
       access-manager: { condition: service_healthy }
     healthcheck:
       <<: *service-healthcheck
-      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
 
   bpp-tabular:
     image: bdc-bpp:local
@@ -124,7 +130,13 @@ services:
       redis: { condition: service_healthy }
     healthcheck:
       <<: *service-healthcheck
-      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
 
   bpp-image:
     image: bdc-bpp:local
@@ -149,7 +161,13 @@ services:
       redis: { condition: service_healthy }
     healthcheck:
       <<: *service-healthcheck
-      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3012/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3012/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
 
   bpp-models:
     image: bdc-bpp:local
@@ -174,7 +192,13 @@ services:
       redis: { condition: service_healthy }
     healthcheck:
       <<: *service-healthcheck
-      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3022/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3022/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
 
   access-manager:
     build:
@@ -195,7 +219,13 @@ services:
       redis: { condition: service_healthy }
     healthcheck:
       <<: *service-healthcheck
-      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
 
 volumes:
   postgres-data:
