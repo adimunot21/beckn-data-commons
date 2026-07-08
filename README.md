@@ -18,14 +18,17 @@ Compose. Product logic lands from Phase 2 onward.
 
 ## Architecture (services)
 
-| Service           | Port | Role                                                            |
-| ----------------- | ---- | -------------------------------------------------------------- |
-| `bap`             | 3001 | Beckn Application Platform — consumer gateway / orchestrator    |
-| `bpp`             | 3002 | Beckn Provider Platform — config-driven dataset/model provider  |
-| `access-manager`  | 3003 | Consent-artifact / Access Grant issuance, revocation, expiry    |
-| `mcp-server`      | 3004 | MCP tools wrapping the BAP + Access Manager for LLM agents      |
+| Service            | Port              | Role                                                           |
+| ------------------ | ----------------- | -------------------------------------------------------------- |
+| `bap`              | 3001              | Beckn Application Platform — consumer gateway / orchestrator    |
+| `bpp` (×3)         | 3002 / 3012 / 3022 | Provider platforms — tabular / image / model catalogs         |
+| `access-manager`   | 3003              | Consent-artifact / Access Grant issuance, revocation, expiry   |
+| `mcp-server`       | stdio             | Host-run MCP bridge for LLM agents — see `docs/mcp-setup.md`    |
 
 Shared packages: `@bdc/beckn-schemas` (Zod schemas), `@bdc/crypto-utils` (Ed25519 + canonical JSON).
+
+The MCP server is not a backend container; it is launched by an MCP client (Claude) and talks to the
+network over localhost. Driving the whole flow in natural language: [`docs/mcp-setup.md`](./docs/mcp-setup.md).
 
 ## Prerequisites
 

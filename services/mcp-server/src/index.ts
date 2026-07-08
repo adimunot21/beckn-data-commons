@@ -1,33 +1,28 @@
+#!/usr/bin/env node
 /**
- * MCP Server — Model Context Protocol bridge to the BDC network.
+ * BDC MCP server entrypoint (stdio). Launched by an MCP client (Claude Desktop /
+ * Claude Code) as a subprocess; it bridges to the BDC backend over localhost.
  *
- * Phase 0 stub: boots a Fastify server exposing GET /health for orchestration.
- * In Phase 5 this exposes MCP tools (search_resources, view_resource,
- * request_access, confirm_access, list_my_grants, revoke_grant, download) so any
- * MCP client (Claude) can transact on the network in natural language. The HTTP
- * health endpoint remains for Docker orchestration alongside the MCP transport.
+ * IMPORTANT: stdout is the MCP protocol channel — never write to it. Diagnostics
+ * go to stderr.
  */
-import Fastify from 'fastify';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { loadConfig } from './config.js';
+import { HttpBdcGateway } from './gateway.js';
+import { createServer } from './server.js';
 
-const SERVICE_NAME = 'mcp-server';
-const PORT = Number(process.env.PORT ?? 3004);
-const HOST = process.env.HOST ?? '0.0.0.0';
-
-const app = Fastify({ logger: true });
-
-app.get('/health', async () => ({
-  status: 'ok',
-  service: SERVICE_NAME,
-  timestamp: new Date().toISOString(),
-}));
-
-async function start(): Promise<void> {
-  try {
-    await app.listen({ port: PORT, host: HOST });
-  } catch (err) {
-    app.log.error(err);
-    process.exit(1);
-  }
+async function main(): Promise<void> {
+  const config = loadConfig();
+  const gateway = new HttpBdcGateway({ bapUrl: config.bapUrl, amUrl: config.amUrl });
+  const server = createServer({ config, gateway });
+  const transport = new StdioServerTransport();
+  await server.connect(transport);
+  console.error(
+    `[bdc-mcp] connected (BAP=${config.bapUrl}, AM=${config.amUrl}, downloads=${config.downloadDir})`,
+  );
 }
 
-void start();
+main().catch((err) => {
+  console.error('[bdc-mcp] fatal:', err);
+  process.exit(1);
+});
