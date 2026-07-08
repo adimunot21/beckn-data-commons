@@ -3,7 +3,7 @@
  * Postgres or in-memory storage, starts an expiry-sweep interval, and serves.
  */
 import pg from 'pg';
-import { publicKeyFor } from '@bdc/crypto-utils';
+import { createParticipantAuth, parseKeyRegistry, publicKeyFor } from '@bdc/crypto-utils';
 import { loadConfig } from './config.js';
 import { GrantService } from './service.js';
 import { createApp } from './app.js';
@@ -17,6 +17,19 @@ const SWEEP_INTERVAL_MS = 60_000;
 async function main(): Promise<void> {
   const config = loadConfig();
   const publicKey = await publicKeyFor(config.privateKey);
+
+  // Authenticate inbound issue requests. The AM verifies (it does not originate
+  // Beckn messages); its keyId is only nominal here. Mandatory — no skip.
+  const registrySpec = process.env.BECKN_REGISTRY;
+  if (!registrySpec) {
+    throw new Error('BECKN_REGISTRY is required — grant issuance must be authenticated');
+  }
+  const auth = createParticipantAuth({
+    keyId: config.amId,
+    privateKeyHex: config.privateKey,
+    registry: parseKeyRegistry(registrySpec),
+    clockSkewSeconds: 5,
+  });
 
   let store: GrantStore;
   if (config.databaseUrl) {
@@ -36,7 +49,7 @@ async function main(): Promise<void> {
     store,
   });
 
-  const app = createApp({ config, service });
+  const app = createApp({ config, service, verifyIssue: auth.verify });
 
   const sweep = setInterval(() => {
     void service

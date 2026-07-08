@@ -5,6 +5,7 @@
  * Selects Postgres-backed stores when DATABASE_URL is set, else in-memory.
  */
 import pg from 'pg';
+import { createParticipantAuth, parseKeyRegistry } from '@bdc/crypto-utils';
 import { loadConfig } from './config.js';
 import { BppCatalog } from './catalog.js';
 import { createApp } from './app.js';
@@ -14,8 +15,27 @@ import type { RedemptionStore, RevocationStore } from './stores/types.js';
 
 const { Pool } = pg;
 
+/** Mandatory per-hop message auth; the BPP refuses to boot without it. */
+function requireAuth(keyId: string, clockSkewSeconds: number) {
+  const privateKeyHex = process.env.BECKN_PRIVATE_KEY;
+  const registrySpec = process.env.BECKN_REGISTRY;
+  if (!privateKeyHex || !registrySpec) {
+    throw new Error(
+      'BECKN_PRIVATE_KEY and BECKN_REGISTRY are required — per-hop message auth is mandatory',
+    );
+  }
+  return createParticipantAuth({
+    keyId,
+    privateKeyHex,
+    registry: parseKeyRegistry(registrySpec),
+    ttlSeconds: 30,
+    clockSkewSeconds,
+  });
+}
+
 async function main(): Promise<void> {
   const config = loadConfig();
+  const auth = requireAuth(config.bppId, config.clockSkewSeconds);
   const catalog = BppCatalog.load(config.catalogFile, config.dataDir);
 
   let revocations: RevocationStore;
@@ -30,7 +50,14 @@ async function main(): Promise<void> {
     redemptions = new InMemoryRedemptionStore();
   }
 
-  const app = createApp({ config, catalog, revocations, redemptions });
+  const app = createApp({
+    config,
+    catalog,
+    revocations,
+    redemptions,
+    verifyRequest: auth.verify,
+    signCallback: auth.sign,
+  });
 
   if (!config.accessManagerPublicKey) {
     app.log.warn(

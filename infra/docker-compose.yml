@@ -54,6 +54,9 @@ services:
       BPP_ENDPOINTS: bpp.tabular.local=http://bpp-tabular:3002,bpp.vision.local=http://bpp-image:3012,bpp.models.local=http://bpp-models:3022
       ACCESS_MANAGER_URL: http://access-manager:3003
       AGGREGATION_WINDOW_MS: 3000
+      # Per-hop message auth: this participant's signing key + the trusted registry.
+      BECKN_PRIVATE_KEY: ${BAP_BECKN_PRIVATE_KEY:-}
+      BECKN_REGISTRY: ${BECKN_REGISTRY:-}
     ports:
       - '${BAP_PORT:-3001}:3001'
     depends_on:
@@ -92,6 +95,8 @@ services:
       DATA_DIR: /app/seed-data/files
       DATABASE_URL: postgresql://${POSTGRES_USER:-bdc}:${POSTGRES_PASSWORD:-bdc_dev_password}@postgres:5432/${POSTGRES_DB:-bdc}
       ACCESS_MANAGER_PUBLIC_KEY: ${ACCESS_MANAGER_PUBLIC_KEY:-}
+      BECKN_PRIVATE_KEY: ${BPP_TABULAR_BECKN_PRIVATE_KEY:-}
+      BECKN_REGISTRY: ${BECKN_REGISTRY:-}
     ports:
       - '${BPP_TABULAR_PORT:-3002}:3002'
     depends_on:
@@ -124,6 +129,8 @@ services:
       DATA_DIR: /app/seed-data/files
       DATABASE_URL: postgresql://${POSTGRES_USER:-bdc}:${POSTGRES_PASSWORD:-bdc_dev_password}@postgres:5432/${POSTGRES_DB:-bdc}
       ACCESS_MANAGER_PUBLIC_KEY: ${ACCESS_MANAGER_PUBLIC_KEY:-}
+      BECKN_PRIVATE_KEY: ${BPP_VISION_BECKN_PRIVATE_KEY:-}
+      BECKN_REGISTRY: ${BECKN_REGISTRY:-}
     ports:
       - '${BPP_IMAGE_PORT:-3012}:3012'
     depends_on:
@@ -156,6 +163,8 @@ services:
       DATA_DIR: /app/seed-data/files
       DATABASE_URL: postgresql://${POSTGRES_USER:-bdc}:${POSTGRES_PASSWORD:-bdc_dev_password}@postgres:5432/${POSTGRES_DB:-bdc}
       ACCESS_MANAGER_PUBLIC_KEY: ${ACCESS_MANAGER_PUBLIC_KEY:-}
+      BECKN_PRIVATE_KEY: ${BPP_MODELS_BECKN_PRIVATE_KEY:-}
+      BECKN_REGISTRY: ${BECKN_REGISTRY:-}
     ports:
       - '${BPP_MODELS_PORT:-3022}:3022'
     depends_on:
@@ -185,6 +194,8 @@ services:
       AM_PRIVATE_KEY: ${AM_PRIVATE_KEY:-}
       GRANT_TTL_SECONDS: 3600
       DATABASE_URL: postgresql://${POSTGRES_USER:-bdc}:${POSTGRES_PASSWORD:-bdc_dev_password}@postgres:5432/${POSTGRES_DB:-bdc}
+      # Verifies that grant-issuance requests come from the trusted BAP.
+      BECKN_REGISTRY: ${BECKN_REGISTRY:-}
     ports:
       - '${ACCESS_MANAGER_PORT:-3003}:3003'
     depends_on:

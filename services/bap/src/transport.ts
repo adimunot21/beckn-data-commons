@@ -8,7 +8,12 @@ import type { IssueGrantRequest, SignedAccessGrant } from '@bdc/beckn-schemas';
 /** Sends a Beckn request (discover/select/init/confirm) to a BPP endpoint. */
 export interface BppTransport {
   /** POST `${uri}/${action}` with the envelope; resolves once the ACK is received. */
-  send(uri: string, action: string, envelope: unknown): Promise<void>;
+  send(
+    uri: string,
+    action: string,
+    envelope: unknown,
+    headers?: Record<string, string>,
+  ): Promise<void>;
 }
 
 /** Calls the Access Manager to issue a grant. */
@@ -17,10 +22,10 @@ export interface AmClient {
 }
 
 export const httpBppTransport: BppTransport = {
-  async send(uri, action, envelope) {
+  async send(uri, action, envelope, headers) {
     const res = await fetch(`${uri.replace(/\/$/, '')}/${action}`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: { 'content-type': 'application/json', ...headers },
       body: JSON.stringify(envelope),
     });
     if (!res.ok) {
@@ -29,12 +34,23 @@ export const httpBppTransport: BppTransport = {
   },
 };
 
-export function httpAmClient(accessManagerUrl: string): AmClient {
+/**
+ * AM client. `sign` (when provided) authenticates the issue request as the BAP so
+ * the Access Manager only mints grants for a trusted requester — no rogue issuance.
+ */
+export function httpAmClient(
+  accessManagerUrl: string,
+  sign?: (body: unknown) => Promise<string>,
+): AmClient {
   return {
     async issue(request) {
+      const authorization = sign ? await sign(request) : undefined;
       const res = await fetch(`${accessManagerUrl}/grants`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          ...(authorization ? { authorization } : {}),
+        },
         body: JSON.stringify(request),
       });
       if (!res.ok) {

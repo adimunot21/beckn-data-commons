@@ -58,6 +58,8 @@ export interface OrchestratorDeps {
   windowMs?: number;
   /** Optional error logger for failed sends. */
   onError?: (err: unknown) => void;
+  /** Signs each outbound Beckn envelope as the BAP (per-hop message auth). */
+  signOutbound?: (body: unknown) => Promise<string>;
 }
 
 export class TimeoutError extends Error {}
@@ -118,9 +120,17 @@ export class BapOrchestrator {
 
       for (const target of targets) {
         const envelope = { context: this.context(action, transactionId, target), message };
-        void this.deps.transport
-          .send(target.uri, action, envelope)
-          .catch((err) => this.deps.onError?.(err));
+        void (async () => {
+          const authorization = this.deps.signOutbound
+            ? await this.deps.signOutbound(envelope)
+            : undefined;
+          await this.deps.transport.send(
+            target.uri,
+            action,
+            envelope,
+            authorization ? { authorization } : undefined,
+          );
+        })().catch((err) => this.deps.onError?.(err));
       }
     });
   }

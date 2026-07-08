@@ -5,7 +5,9 @@
  * Callbacks are fed into the orchestrator's aggregation window by transactionId.
  */
 import Fastify, { type FastifyInstance } from 'fastify';
+import rateLimit from '@fastify/rate-limit';
 import { LicenseClass, GrantScope } from '@bdc/beckn-schemas';
+import type { VerifyResult } from '@bdc/crypto-utils';
 import type { BapConfig } from './config.js';
 import { type BapOrchestrator, TimeoutError } from './orchestrator.js';
 
@@ -14,6 +16,12 @@ export interface BapAppDeps {
   orchestrator: BapOrchestrator;
   now?: () => Date;
   logger?: boolean;
+  /**
+   * Verifies inbound BPP callbacks (on_*). Production always wires this; unit
+   * tests that isolate orchestration may omit it. The production entrypoint
+   * refuses to boot without message-auth configured — there is no runtime skip.
+   */
+  verifyCallback?: (body: unknown, header: string | undefined) => Promise<VerifyResult>;
 }
 
 type Json = Record<string, unknown>;
@@ -21,7 +29,11 @@ type Json = Record<string, unknown>;
 export function createApp(deps: BapAppDeps): FastifyInstance {
   const { config, orchestrator } = deps;
   const now = deps.now ?? (() => new Date());
-  const app = Fastify({ logger: deps.logger ?? true });
+  const app = Fastify({ logger: deps.logger ?? true, bodyLimit: 256 * 1024 });
+  void app.register(rateLimit, {
+    max: Number(process.env.RATE_LIMIT_MAX ?? 600),
+    timeWindow: '1 minute',
+  });
 
   app.get('/health', async () => ({
     status: 'ok',
@@ -31,8 +43,20 @@ export function createApp(deps: BapAppDeps): FastifyInstance {
   }));
 
   // ---- Beckn callback endpoints: receive on_* from BPPs, ACK, feed aggregator ----
+  // Every callback is authenticated: a forged or replayed on_* is rejected before
+  // it can poison the aggregation window.
   for (const action of ['on_discover', 'on_select', 'on_init', 'on_confirm']) {
-    app.post(`/${action}`, async (request) => {
+    app.post(`/${action}`, async (request, reply) => {
+      if (deps.verifyCallback) {
+        const result = await deps.verifyCallback(request.body, request.headers.authorization);
+        if (!result.ok) {
+          reply.code(401);
+          return {
+            message: { status: 'NACK' },
+            error: { code: 'UNAUTHENTICATED', reason: result.reason },
+          };
+        }
+      }
       orchestrator.deliverCallback(request.body);
       return { message: { status: 'ACK' } };
     });

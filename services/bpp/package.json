@@ -15,7 +15,8 @@
     "@bdc/beckn-schemas": "workspace:*",
     "@bdc/crypto-utils": "workspace:*",
     "fastify": "5.2.0",
-    "pg": "8.13.1"
+    "pg": "8.13.1",
+    "@fastify/rate-limit": "10.2.0"
   },
   "devDependencies": {
     "@types/pg": "8.11.10"

@@ -30,6 +30,9 @@ Shared packages: `@bdc/beckn-schemas` (Zod schemas), `@bdc/crypto-utils` (Ed2551
 The MCP server is not a backend container; it is launched by an MCP client (Claude) and talks to the
 network over localhost. Driving the whole flow in natural language: [`docs/mcp-setup.md`](./docs/mcp-setup.md).
 
+Every Beckn hop is authenticated (Ed25519-signed, replay-protected) and every download is gated by a
+signed, scoped, revocable Access Grant — the full threat model is in [`docs/security.md`](./docs/security.md).
+
 ## Prerequisites
 
 - Node.js 22 (via `nvm use` — see `.nvmrc`)

@@ -3,7 +3,9 @@
  * at confirm time, plus revoke/list/status and the public-key endpoint BPPs trust.
  */
 import Fastify, { type FastifyInstance } from 'fastify';
+import rateLimit from '@fastify/rate-limit';
 import { IssueGrantRequest } from '@bdc/beckn-schemas';
+import type { VerifyResult } from '@bdc/crypto-utils';
 import type { AmConfig } from './config.js';
 import type { GrantService } from './service.js';
 
@@ -12,12 +14,21 @@ export interface AmAppDeps {
   service: GrantService;
   now?: () => Date;
   logger?: boolean;
+  /**
+   * Authenticates the issue request as coming from the trusted BAP, so no rogue
+   * party can mint grants. Production always wires this; unit tests may omit it.
+   */
+  verifyIssue?: (body: unknown, header: string | undefined) => Promise<VerifyResult>;
 }
 
 export function createApp(deps: AmAppDeps): FastifyInstance {
   const { config, service } = deps;
   const now = deps.now ?? (() => new Date());
-  const app = Fastify({ logger: deps.logger ?? true });
+  const app = Fastify({ logger: deps.logger ?? true, bodyLimit: 256 * 1024 });
+  void app.register(rateLimit, {
+    max: Number(process.env.RATE_LIMIT_MAX ?? 600),
+    timeWindow: '1 minute',
+  });
 
   app.get('/health', async () => ({
     status: 'ok',
@@ -33,8 +44,15 @@ export function createApp(deps: AmAppDeps): FastifyInstance {
     publicKey: service.publicKey,
   }));
 
-  // Issue a grant.
+  // Issue a grant. Authenticated: only the trusted BAP may request issuance.
   app.post('/grants', async (request, reply) => {
+    if (deps.verifyIssue) {
+      const auth = await deps.verifyIssue(request.body, request.headers.authorization);
+      if (!auth.ok) {
+        reply.code(401);
+        return { error: 'unauthenticated', reason: auth.reason };
+      }
+    }
     const parsed = IssueGrantRequest.safeParse(request.body);
     if (!parsed.success) {
       reply.code(400);

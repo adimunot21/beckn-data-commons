@@ -10,6 +10,10 @@ dist/
 .env
 .env.*
 !.env.example
+# Generated key material — never commit private keys
+infra/beckn-keys.env
+infra/am-keys.env
+*-keys.env
 
 # Logs
 *.log

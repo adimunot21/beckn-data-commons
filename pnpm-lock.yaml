@@ -56,6 +56,9 @@ importers:
       '@bdc/crypto-utils':
         specifier: workspace:*
         version: link:../../packages/crypto-utils
+      '@fastify/rate-limit':
+        specifier: 10.2.0
+        version: 10.2.0
       fastify:
         specifier: 5.2.0
         version: 5.2.0
@@ -75,6 +78,9 @@ importers:
       '@bdc/crypto-utils':
         specifier: workspace:*
         version: link:../../packages/crypto-utils
+      '@fastify/rate-limit':
+        specifier: 10.2.0
+        version: 10.2.0
       fastify:
         specifier: 5.2.0
         version: 5.2.0
@@ -87,6 +93,9 @@ importers:
       '@bdc/crypto-utils':
         specifier: workspace:*
         version: link:../../packages/crypto-utils
+      '@fastify/rate-limit':
+        specifier: 10.2.0
+        version: 10.2.0
       fastify:
         specifier: 5.2.0
         version: 5.2.0
@@ -444,6 +453,9 @@ packages:
   '@fastify/merge-json-schemas@0.2.1':
     resolution: {integrity: sha512-OA3KGBCy6KtIvLf8DINC5880o5iBlDX4SxzLQS8HorJAbqluzLRn80UXU0bxZn7UOFhFgpRJDasfwn9nG4FG4A==}
 
+  '@fastify/rate-limit@10.2.0':
+    resolution: {integrity: sha512-o012oXtc1kOozyk8ogwNzIRbWaNgAhYGJcbiW84+SPafTD8NEU43D/iTYkJgDNamfk4z4AYyQZJbfT2bpzRh5A==}
+
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
     engines: {node: '>=18.18.0'}
@@ -466,6 +478,10 @@ packages:
 
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
+
+  '@lukeed/ms@2.0.2':
+    resolution: {integrity: sha512-9I2Zn6+NJLfaGoz9jN3lpwDgAYvfGeNYdbAIjJOqzs4Tpc+VU3Jqq4IofSUBKajiDS8k9fZIg18/z13mpk1bsA==}
+    engines: {node: '>=8'}
 
   '@modelcontextprotocol/sdk@1.13.1':
     resolution: {integrity: sha512-8q6+9aF0yA39/qWT/uaIj6zTpC+Qu07DnN/lb9mjoquCJsAh6l3HyYqc9O3t2j7GilseOQOQimLg7W3By6jqvg==}
@@ -1010,6 +1026,9 @@ packages:
 
   fast-uri@3.1.3:
     resolution: {integrity: sha512-i70LwGWUduXqzicKXWshooq+sWL1K3WUU5rKZNG/0i3a1OSoX3HqhH5WbWwTmqWfor4urUakGPiRQcleRZTwOg==}
+
+  fastify-plugin@5.1.0:
+    resolution: {integrity: sha512-FAIDA8eovSt5qcDgcBvDuX/v0Cjz0ohGhENZ/wpc3y+oZCY2afZ9Baqql3g/lC+OHRnciQol4ww7tuthOb9idw==}
 
   fastify@5.2.0:
     resolution: {integrity: sha512-3s+Qt5S14Eq5dCpnE0FxTp3z4xKChI83ZnMv+k0FwX+VUoZrgCFoLAxpfdi/vT4y6Mk+g7aAMt9pgXDoZmkefQ==}
@@ -1946,6 +1965,12 @@ snapshots:
     dependencies:
       dequal: 2.0.3
 
+  '@fastify/rate-limit@10.2.0':
+    dependencies:
+      '@lukeed/ms': 2.0.2
+      fastify-plugin: 5.1.0
+      toad-cache: 3.7.4
+
   '@humanfs/core@0.19.2':
     dependencies:
       '@humanfs/types': 0.15.0
@@ -1963,6 +1988,8 @@ snapshots:
   '@humanwhocodes/retry@0.4.3': {}
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
+
+  '@lukeed/ms@2.0.2': {}
 
   '@modelcontextprotocol/sdk@1.13.1':
     dependencies:
@@ -2588,6 +2615,8 @@ snapshots:
       fast-decode-uri-component: 1.0.1
 
   fast-uri@3.1.3: {}
+
+  fastify-plugin@5.1.0: {}
 
   fastify@5.2.0:
     dependencies:

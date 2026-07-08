@@ -15,3 +15,15 @@ export {
   verifyCanonical,
   type KeyPair,
 } from './ed25519.js';
+export {
+  signMessage,
+  verifyMessage,
+  ReplayCache,
+  parseKeyRegistry,
+  createParticipantAuth,
+  type SignOptions,
+  type VerifyOptions,
+  type VerifyResult,
+  type VerifyReason,
+  type ParticipantAuth,
+} from './beckn-auth.js';

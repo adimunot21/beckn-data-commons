@@ -7,7 +7,9 @@
  */
 import { createReadStream } from 'node:fs';
 import Fastify, { type FastifyInstance } from 'fastify';
+import rateLimit from '@fastify/rate-limit';
 import { BecknContext, ack } from '@bdc/beckn-schemas';
+import type { VerifyResult } from '@bdc/crypto-utils';
 import type { BppConfig } from './config.js';
 import type { BppCatalog } from './catalog.js';
 import type { RedemptionStore, RevocationStore } from './stores/types.js';
@@ -21,7 +23,11 @@ import {
 import { parsePresentedGrant, redeemGrant } from './download.js';
 
 /** Delivers an async `on_<action>` callback to the caller's callback endpoint. */
-export type CallbackDispatcher = (url: string, payload: unknown) => Promise<void>;
+export type CallbackDispatcher = (
+  url: string,
+  payload: unknown,
+  headers?: Record<string, string>,
+) => Promise<void>;
 
 export interface AppDeps {
   config: BppConfig;
@@ -34,12 +40,21 @@ export interface AppDeps {
   now?: () => Date;
   /** Fastify logger option (defaults to true; pass false to quiet tests). */
   logger?: boolean;
+  /**
+   * Verifies inbound Beckn requests (discover/select/init/confirm) as coming from
+   * a trusted, non-replayed BAP. Production always wires this; unit tests that
+   * isolate Beckn logic may omit it. No runtime skip flag — the entrypoint refuses
+   * to boot without message-auth configured.
+   */
+  verifyRequest?: (body: unknown, header: string | undefined) => Promise<VerifyResult>;
+  /** Signs outbound on_* callbacks as this BPP so the BAP can authenticate them. */
+  signCallback?: (body: unknown) => Promise<string>;
 }
 
-const httpDispatch: CallbackDispatcher = async (url, payload) => {
+const httpDispatch: CallbackDispatcher = async (url, payload, headers) => {
   await fetch(url, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', ...headers },
     body: JSON.stringify(payload),
   });
 };
@@ -56,7 +71,11 @@ export function createApp(deps: AppDeps): FastifyInstance {
   const dispatch = deps.dispatch ?? httpDispatch;
   const now = deps.now ?? (() => new Date());
 
-  const app = Fastify({ logger: deps.logger ?? true });
+  const app = Fastify({ logger: deps.logger ?? true, bodyLimit: 256 * 1024 });
+  void app.register(rateLimit, {
+    max: Number(process.env.RATE_LIMIT_MAX ?? 600),
+    timeWindow: '1 minute',
+  });
 
   app.get('/health', async () => ({
     status: 'ok',
@@ -69,6 +88,18 @@ export function createApp(deps: AppDeps): FastifyInstance {
   const becknRoute = (action: string, build: Builder) =>
     app.post(`/${action}`, async (request, reply) => {
       const body = (request.body ?? {}) as { context?: unknown; message?: unknown };
+      // Authenticate the sender before doing any work: reject a forged or replayed
+      // request from an impostor claiming to be the BAP.
+      if (deps.verifyRequest) {
+        const auth = await deps.verifyRequest(body, request.headers.authorization);
+        if (!auth.ok) {
+          reply.code(401);
+          return {
+            message: { status: 'NACK' },
+            error: { code: 'UNAUTHENTICATED', message: auth.reason },
+          };
+        }
+      }
       const parsed = BecknContext.safeParse(body.context);
       if (!parsed.success) {
         reply.code(400);
@@ -84,10 +115,12 @@ export function createApp(deps: AppDeps): FastifyInstance {
       };
       const response = build(ctx, catalog, body.message, buildDeps);
       const callbackUrl = `${ctx.bapUri.replace(/\/$/, '')}/${String(response.context.action)}`;
-      // Fire-and-forget: the real result is delivered asynchronously to the BAP.
-      void dispatch(callbackUrl, response).catch((err) =>
-        app.log.error({ err, callbackUrl }, 'callback dispatch failed'),
-      );
+      // Fire-and-forget: the real result is delivered asynchronously to the BAP,
+      // signed so the BAP can authenticate this callback.
+      void (async () => {
+        const authorization = deps.signCallback ? await deps.signCallback(response) : undefined;
+        await dispatch(callbackUrl, response, authorization ? { authorization } : undefined);
+      })().catch((err) => app.log.error({ err, callbackUrl }, 'callback dispatch failed'));
       reply.code(200);
       return ack(ctx.messageId);
     });
