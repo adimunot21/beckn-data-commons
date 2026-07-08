@@ -1,0 +1,43 @@
+# Caddy reverse proxy for the public BDC deployment.
+#
+# Caddy terminates TLS (fetching a real certificate automatically when PUBLIC_HOST
+# is a domain or an *.sslip.io name) and routes by path to the internal services.
+# `handle_path` strips the matched prefix before forwarding, so the services keep
+# serving their routes at the root (e.g. /search, /download) unchanged.
+#
+# PUBLIC_HOST is supplied by the container environment (see docker-compose.prod.yml).
+
+{$PUBLIC_HOST} {
+	# Consumer gateway (BAP): /search, /select, /init, /confirm, /on_*
+	handle_path /bap/* {
+		reverse_proxy bap:3001
+	}
+
+	# Access Manager: /grants, /grants/:id/revoke, /pubkey
+	# NOTE: revoke/list are unauthenticated in this build (see docs/security.md).
+	# Exposing /am publicly enables the full demo (list/revoke from a remote MCP
+	# client) but accepts that documented DoS-only risk. Remove this block to keep
+	# the Access Manager internal-only.
+	handle_path /am/* {
+		reverse_proxy access-manager:3003
+	}
+
+	# Provider platforms (BPPs): /download and Beckn routes.
+	handle_path /bpp-tabular/* {
+		reverse_proxy bpp-tabular:3002
+	}
+	handle_path /bpp-image/* {
+		reverse_proxy bpp-image:3012
+	}
+	handle_path /bpp-models/* {
+		reverse_proxy bpp-models:3022
+	}
+
+	# A friendly root so hitting the bare host doesn't 404.
+	handle / {
+		respond "Beckn Data Commons is running. See /bap/health." 200
+	}
+
+	encode gzip
+	log
+}

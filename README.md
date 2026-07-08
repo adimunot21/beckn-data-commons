@@ -99,5 +99,6 @@ For a technical reader, start with the **architecture overview**, then the per-c
 | [`docs/04_access_manager.md`](./docs/04_access_manager.md) | Access Manager — issuing, revoking, the shared revocation table |
 | [`docs/05_mcp.md`](./docs/05_mcp.md) | MCP server — how an LLM agent drives the whole flow |
 | [`docs/mcp-setup.md`](./docs/mcp-setup.md) | Running the MCP demo from Claude |
+| [`docs/DEPLOY.md`](./docs/DEPLOY.md) | Deploying to a public host (VPS + Compose + Caddy/HTTPS) |
 | [`docs/security.md`](./docs/security.md) | Per-hop message auth, grant verification, full threat model |
 | [`docs/00_protocol.md`](./docs/00_protocol.md) · [`consent-artifact-spec.md`](./docs/consent-artifact-spec.md) · [`domain-schema.md`](./docs/domain-schema.md) · [`data-contract.md`](./docs/data-contract.md) | Protocol notes, consent-artifact spec, domain schema, external data contract |

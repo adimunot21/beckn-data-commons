@@ -1,0 +1,203 @@
+# Production topology for Beckn Data Commons.
+#
+# Same services as docker-compose.yml, hardened for a single public host:
+#   - Only Caddy is exposed to the internet (ports 80/443); it terminates TLS and
+#     reverse-proxies to the internal services by path (/bap, /am, /bpp-*).
+#   - No other service publishes a host port — Postgres, Redis, the BAP, the BPPs
+#     and the Access Manager are reachable only on the internal Docker network.
+#   - Inter-service traffic (BAP→BPP fan-out, BPP→BAP callbacks, BAP→AM issue)
+#     stays on internal DNS exactly as tested; only each BPP's *public download
+#     URL* (BPP_URI) points at the public host, so remote clients can download.
+#   - restart: unless-stopped so the network survives reboots.
+#
+# Secrets and the public hostname come from an env file you assemble (never
+# committed). Run it with:
+#   docker compose --env-file infra/.env.prod -f infra/docker-compose.prod.yml up -d
+#
+# See docs/DEPLOY.md for the full runbook.
+name: beckn-data-commons
+
+x-service-healthcheck: &service-healthcheck
+  interval: 10s
+  timeout: 5s
+  retries: 5
+  start_period: 20s
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      # The public hostname (e.g. a domain, or <ip>.sslip.io for a free cert).
+      PUBLIC_HOST: ${PUBLIC_HOST:?set PUBLIC_HOST in your env file}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      bap:
+        condition: service_healthy
+      bpp-tabular:
+        condition: service_healthy
+      bpp-image:
+        condition: service_healthy
+      bpp-models:
+        condition: service_healthy
+      access-manager:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-bdc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set a strong POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-bdc}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-bdc} -d ${POSTGRES_DB:-bdc}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  bap:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: bap
+    restart: unless-stopped
+    environment:
+      PORT: 3001
+      BAP_ID: bap.bdc.local
+      # Callbacks are delivered on the internal network — no need to be public.
+      BAP_URI: http://bap:3001
+      NETWORK_ID: nfh.global/testnet-ddm
+      BPP_ENDPOINTS: bpp.tabular.local=http://bpp-tabular:3002,bpp.vision.local=http://bpp-image:3012,bpp.models.local=http://bpp-models:3022
+      ACCESS_MANAGER_URL: http://access-manager:3003
+      AGGREGATION_WINDOW_MS: 3000
+      BECKN_PRIVATE_KEY: ${BAP_BECKN_PRIVATE_KEY:?}
+      BECKN_REGISTRY: ${BECKN_REGISTRY:?}
+    depends_on:
+      bpp-tabular: { condition: service_healthy }
+      bpp-image: { condition: service_healthy }
+      bpp-models: { condition: service_healthy }
+      access-manager: { condition: service_healthy }
+    healthcheck:
+      <<: *service-healthcheck
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  bpp-tabular:
+    image: bdc-bpp:local
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: bpp
+    restart: unless-stopped
+    environment:
+      PORT: 3002
+      BPP_ID: bpp.tabular.local
+      # Public download URL (through Caddy): must be reachable by remote clients.
+      BPP_URI: https://${PUBLIC_HOST}/bpp-tabular
+      CATALOG_FILE: /app/seed-data/catalogs/tabular.catalog.json
+      DATA_DIR: /app/seed-data/files
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bdc}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-bdc}
+      ACCESS_MANAGER_PUBLIC_KEY: ${ACCESS_MANAGER_PUBLIC_KEY:?}
+      BECKN_PRIVATE_KEY: ${BPP_TABULAR_BECKN_PRIVATE_KEY:?}
+      BECKN_REGISTRY: ${BECKN_REGISTRY:?}
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      <<: *service-healthcheck
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3002/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  bpp-image:
+    image: bdc-bpp:local
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: bpp
+    restart: unless-stopped
+    environment:
+      PORT: 3012
+      BPP_ID: bpp.vision.local
+      BPP_URI: https://${PUBLIC_HOST}/bpp-image
+      CATALOG_FILE: /app/seed-data/catalogs/image.catalog.json
+      DATA_DIR: /app/seed-data/files
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bdc}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-bdc}
+      ACCESS_MANAGER_PUBLIC_KEY: ${ACCESS_MANAGER_PUBLIC_KEY:?}
+      BECKN_PRIVATE_KEY: ${BPP_VISION_BECKN_PRIVATE_KEY:?}
+      BECKN_REGISTRY: ${BECKN_REGISTRY:?}
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      <<: *service-healthcheck
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3012/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  bpp-models:
+    image: bdc-bpp:local
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: bpp
+    restart: unless-stopped
+    environment:
+      PORT: 3022
+      BPP_ID: bpp.models.local
+      BPP_URI: https://${PUBLIC_HOST}/bpp-models
+      CATALOG_FILE: /app/seed-data/catalogs/models.catalog.json
+      DATA_DIR: /app/seed-data/files
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bdc}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-bdc}
+      ACCESS_MANAGER_PUBLIC_KEY: ${ACCESS_MANAGER_PUBLIC_KEY:?}
+      BECKN_PRIVATE_KEY: ${BPP_MODELS_BECKN_PRIVATE_KEY:?}
+      BECKN_REGISTRY: ${BECKN_REGISTRY:?}
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      <<: *service-healthcheck
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3022/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+  access-manager:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        SERVICE: access-manager
+    restart: unless-stopped
+    environment:
+      PORT: 3003
+      AM_ID: access-manager.bdc.local
+      AM_PRIVATE_KEY: ${AM_PRIVATE_KEY:?}
+      GRANT_TTL_SECONDS: 3600
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bdc}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-bdc}
+      BECKN_REGISTRY: ${BECKN_REGISTRY:?}
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      <<: *service-healthcheck
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:3003/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:
