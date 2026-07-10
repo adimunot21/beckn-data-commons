@@ -40,3 +40,7 @@ coverage/
 __pycache__/
 *.pyc
 .venv/
+
+# Next.js
+.next/
+next-env.d.ts
