@@ -1,7 +1,11 @@
 **/node_modules
 **/dist
+**/.next
 .git
 .github
-docs
 *.log
 .env
+# docs/ and course/ stay IN the context: the web app statically renders them at
+# build time (apps/web/src/lib/docs.ts). PRODUCT.md is excluded there, not here.
+infra/*.env
+infra/.env.prod

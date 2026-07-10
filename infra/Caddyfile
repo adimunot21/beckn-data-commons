@@ -33,9 +33,10 @@
 		reverse_proxy bpp-models:3022
 	}
 
-	# A friendly root so hitting the bare host doesn't 404.
-	handle / {
-		respond "Beckn Data Commons is running. See /bap/health." 200
+	# Everything else — the web app (landing, /demo, /console, /docs, /api).
+	# handle blocks with path matchers above take precedence; this is the fallback.
+	handle {
+		reverse_proxy web:3000
 	}
 
 	encode gzip

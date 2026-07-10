@@ -38,6 +38,8 @@ services:
       - caddy-data:/data
       - caddy-config:/config
     depends_on:
+      web:
+        condition: service_healthy
       bap:
         condition: service_healthy
       bpp-tabular:
@@ -48,6 +50,31 @@ services:
         condition: service_healthy
       access-manager:
         condition: service_healthy
+
+  web:
+    build:
+      context: ..
+      dockerfile: Dockerfile.web
+    restart: unless-stopped
+    environment:
+      BAP_URL: http://bap:3001
+      ACCESS_MANAGER_URL: http://access-manager:3003
+      # Fetch downloads via internal DNS instead of hairpinning through Caddy.
+      DOWNLOAD_REWRITE: bpp-tabular=http://bpp-tabular:3002,bpp-image=http://bpp-image:3012,bpp-models=http://bpp-models:3022
+    depends_on:
+      bap:
+        condition: service_healthy
+      access-manager:
+        condition: service_healthy
+    healthcheck:
+      <<: *service-healthcheck
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
 
   postgres:
     image: postgres:17-alpine

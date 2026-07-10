@@ -4,10 +4,11 @@ This is the runbook to put the network on the public internet, with HTTPS, on th
 path** — one small VPS running the same `docker compose` you run locally, behind
 [Caddy](https://caddyserver.com/) for automatic TLS. No paid domain is required.
 
-**What gets deployed:** the backend network — the BAP, three BPPs, the Access Manager, Postgres, Redis,
-and Caddy. **What does not:** the MCP server. It's a host-run stdio bridge (see
-[`mcp-setup.md`](./mcp-setup.md)); after deploying you point a *local* MCP server at the public URLs
-(Step 8).
+**What gets deployed:** the full product — the **web app** (landing page, live demo, console, docs) at
+the site root, plus the backend network (BAP, three BPPs, Access Manager, Postgres, Redis) behind
+Caddy: `/` → web, `/bap` `/am` `/bpp-*` → the APIs for MCP and programmatic clients. **What does
+not:** the MCP server. It's a host-run stdio bridge (see [`mcp-setup.md`](./mcp-setup.md)); after
+deploying you point a *local* MCP server at the public URLs (Step 8).
 
 > **Before you start — the honest cost & safety notes**
 > - A VPS that comfortably runs this costs about **US$4–6/month** (1 GB RAM is enough; 2 GB comfortable).
@@ -124,6 +125,9 @@ curl -s https://PUBLIC_HOST/bap/health
 
 If you see a valid response over **https**, you're live. (If the cert isn't ready, wait ~30s and retry;
 Caddy logs are `docker compose ... logs caddy`.)
+
+Then open **`https://PUBLIC_HOST/`** in a browser: the landing page, with the interactive demo at
+`/demo` and the console at `/console/catalog` — all running against your deployment.
 
 ### Try the full flow over the internet
 

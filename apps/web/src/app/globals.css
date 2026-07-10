@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@plugin '@tailwindcss/typography';
 
 /* Design tokens — dark-first dev-tool aesthetic. The grant lifecycle gives the
    palette its semantics: emerald = granted/allowed, red = revoked/denied. */
