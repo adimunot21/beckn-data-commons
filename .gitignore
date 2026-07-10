@@ -44,3 +44,4 @@ __pycache__/
 # Next.js
 .next/
 next-env.d.ts
+apps/web/out/

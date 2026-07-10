@@ -6,9 +6,20 @@
  * which proxy to the real BAP / Access Manager / BPP — nothing is mocked.
  */
 import { useCallback, useMemo, useState } from 'react';
+import Link from 'next/link';
 import type { SignedAccessGrant } from '@bdc/beckn-schemas';
 import { GrantCard } from '@/components/grant-card';
 import type { OfferRef } from '@/lib/offers';
+import { RECORDED } from '@/lib/recorded';
+
+/**
+ * On the static site (GitHub Pages) there is no backend, so the demo replays a
+ * REAL captured run — same UI, genuine outputs, clearly labeled. Inlined at
+ * build time via NEXT_PUBLIC_DEMO_MODE=recorded.
+ */
+const RECORDED_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'recorded';
+const replay = <T,>(value: T): Promise<T> =>
+  new Promise((resolve) => setTimeout(() => resolve(value), 450));
 
 type DownloadOutcome = {
   ok: boolean;
@@ -118,6 +129,12 @@ export function DemoFlow() {
 
   const doSearch = () =>
     run('search', async () => {
+      if (RECORDED_MODE) {
+        return replay({
+          transactionId: RECORDED.transactionId,
+          offers: RECORDED.offers as unknown as OfferRef[],
+        });
+      }
       const json = await api('/api/search', { query: 'churn', purpose: PURPOSE });
       return {
         transactionId: json.transactionId as string,
@@ -127,6 +144,13 @@ export function DemoFlow() {
 
   const doConfirm = (offer: OfferRef) =>
     run('confirm', async () => {
+      if (RECORDED_MODE) {
+        return replay({
+          chosen: offer,
+          grant: RECORDED.grant as unknown as SignedAccessGrant,
+          accessUrl: RECORDED.accessUrl,
+        });
+      }
       const json = await api('/api/confirm', {
         transactionId: s.transactionId,
         bppId: offer.bppId,
@@ -146,12 +170,20 @@ export function DemoFlow() {
 
   const doDownload = (which: 'firstDownload' | 'secondDownload') =>
     run('download', async () => {
+      if (RECORDED_MODE) {
+        return replay({
+          [which]: (which === 'firstDownload'
+            ? RECORDED.download
+            : RECORDED.denied) as DownloadOutcome,
+        });
+      }
       const json = await api('/api/download', { grant: s.grant, accessUrl: s.accessUrl });
       return { [which]: json as DownloadOutcome };
     });
 
   const doRevoke = () =>
     run('revoke', async () => {
+      if (RECORDED_MODE) return replay({ revoked: true });
       await api(`/api/grants/${s.grant?.claims.grantId}/revoke`, {
         reason: 'demo: consent withdrawn',
       });
@@ -160,6 +192,18 @@ export function DemoFlow() {
 
   return (
     <div className="mt-10 space-y-10">
+      {RECORDED_MODE && (
+        <div className="border-ink-700 bg-ink-900 text-ink-300 rounded-md border p-3 text-sm">
+          <strong className="text-ink-100">Static preview:</strong> this replays a{' '}
+          <strong className="text-ink-100">real recorded run</strong> of the sandbox network
+          (captured {new Date(RECORDED.capturedAt).toUTCString()}) — genuine signed grant, genuine
+          403. To drive it live, boot the stack locally in ~10 minutes (
+          <Link href="/docs/tech/DEPLOY" className="underline">
+            deploy guide
+          </Link>
+          ) or ask us for a pilot.
+        </div>
+      )}
       {s.error && (
         <div className="border-revoke-500/50 bg-revoke-500/10 text-revoke-400 rounded-md border p-3 text-sm">
           {s.error} — is the sandbox network up? (<code>docs/DEPLOY.md</code> / <code>infra/</code>)
