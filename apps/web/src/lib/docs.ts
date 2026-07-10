@@ -11,7 +11,7 @@ import { join, resolve } from 'node:path';
 export type Section = 'course' | 'tech';
 
 const SECTION_DIRS: Record<Section, string> = { course: 'course', tech: 'docs' };
-const EXCLUDE = new Set(['PRODUCT.md']);
+const EXCLUDE = new Set(['PRODUCT.md', 'PITCH.md']);
 
 /** Walk up from cwd (apps/web at build time) to the workspace root. */
 function repoRoot(): string {
